@@ -116,7 +116,7 @@ def collection(model, name=None, max_per_page=10):
                                             type=int), max_per_page)
             expand = request.args.get('expand')
 
-            p = query.paginate(page, per_page)
+            p = query.paginate(page=page, per_page=per_page)
             pages = {'page': page, 'per_page': per_page,
                      'total': p.total, 'pages': p.pages}
             if p.has_prev:
