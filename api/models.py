@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import NotFound
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import url_for, current_app
 from flask_sqlalchemy import SQLAlchemy
 from .helpers import args_from_url
@@ -115,15 +115,16 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
     def generate_auth_token(self, expires_in=3600):
-        s = Serializer(current_app.config['SECRET_KEY'], expires_in=expires_in)
-        return s.dumps({'id': self.id}).decode('utf-8')
+        # the expiration time is enforced when the token is verified
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'id': self.id})
 
     @staticmethod
-    def verify_auth_token(token):
+    def verify_auth_token(token, max_age=3600):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
-            data = s.loads(token)
-        except:
+            data = s.loads(token, max_age=max_age)
+        except Exception:
             return None
-        return User.query.get(data['id'])
+        return db.session.get(User, data['id'])
 
